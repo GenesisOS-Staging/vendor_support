@@ -1,11 +1,12 @@
 /*
- * Copyright (C) 2014 The CyanogenMod project
+ * Copyright (C) 2015 The CyanogenMod project
+ * Copyright (C) 2017 AICP
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,49 +18,52 @@
 package com.genesis.support.preferences;
 
 import android.content.Context;
-import android.provider.Settings;
+import androidx.preference.SwitchPreference;
 import android.util.AttributeSet;
+import android.provider.Settings;
 
-import androidx.preference.SwitchPreferenceCompat;
+public class GlobalSettingSwitchPreference extends SwitchPreference {
 
-public class GlobalSettingSwitchPreference extends SwitchPreferenceCompat {
     public GlobalSettingSwitchPreference(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
+        setPreferenceDataStore(new GlobalSettingsStore(context.getContentResolver()));
     }
 
     public GlobalSettingSwitchPreference(Context context, AttributeSet attrs) {
         super(context, attrs);
+        setPreferenceDataStore(new GlobalSettingsStore(context.getContentResolver()));
     }
 
     public GlobalSettingSwitchPreference(Context context) {
-        super(context, null);
+        super(context);
+        setPreferenceDataStore(new GlobalSettingsStore(context.getContentResolver()));
     }
 
-    @Override
-    protected boolean persistBoolean(boolean value) {
-        if (shouldPersist()) {
-            if (value == getPersistedBoolean(!value)) {
-                // It's already there, so the same as persisting
-                return true;
-            }
-            Settings.Global.putInt(getContext().getContentResolver(), getKey(), value ? 1 : 0);
-            return true;
-        }
-        return false;
+    private boolean isPersisted() {
+        return Settings.Global.getString(getContext().getContentResolver(), getKey()) != null;
     }
 
-    @Override
-    protected boolean getPersistedBoolean(boolean defaultReturnValue) {
-        if (!shouldPersist()) {
-            return defaultReturnValue;
-        }
+    private boolean getBoolean(String key, boolean defaultValue) {
         return Settings.Global.getInt(getContext().getContentResolver(),
-                getKey(), defaultReturnValue ? 1 : 0) != 0;
+                key, defaultValue ? 1 : 0) != 0;
     }
 
     @Override
-    protected void onSetInitialValue(boolean restoreValue, Object defaultValue) {
-        setChecked(Settings.Global.getString(getContext().getContentResolver(), getKey()) != null ? getPersistedBoolean(isChecked())
-                : (Boolean) defaultValue);
+    protected void onSetInitialValue(boolean restorePersistedValue, Object defaultValue) {
+        final boolean checked;
+        if (!restorePersistedValue || !isPersisted()) {
+            if (defaultValue == null) {
+                return;
+            }
+            checked = (boolean) defaultValue;
+            if (shouldPersist()) {
+                persistBoolean(checked);
+            }
+        } else {
+            // Note: the default is not used because to have got here
+            // isPersisted() must be true.
+            checked = getBoolean(getKey(), false /* not used */);
+        }
+        setChecked(checked);
     }
 }
