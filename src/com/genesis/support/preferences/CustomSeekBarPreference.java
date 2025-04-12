@@ -190,7 +190,7 @@ public class CustomSeekBarPreference extends Preference implements SeekBar.OnSee
 
         AlertDialog.Builder builder = new AlertDialog.Builder(mContext)
                 .setView(editDialogView)
-                .setTitle(mContext.getString(R.string.seek_value_edit_label))
+                .setTitle(mContext.getString(com.android.internal.R.string.screenshot_edit))
                 .setPositiveButton(R.string.dlg_ok,
                     new DialogInterface.OnClickListener() {
                         @Override
